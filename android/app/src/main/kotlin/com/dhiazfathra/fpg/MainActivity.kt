@@ -1,4 +1,4 @@
-package com.dhiazfathra.flutter_production_grade
+package com.dhiazfathra.fpg
 
 import io.flutter.embedding.android.FlutterActivity
 
