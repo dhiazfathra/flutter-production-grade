@@ -8,6 +8,8 @@ import 'package:flutter_production_grade/core/utils/app_error.dart';
 class AppErrorView extends StatelessWidget {
   const AppErrorView({required this.error, required this.onRetry, super.key});
 
+  static const ValueKey<String> retryButtonKey = ValueKey('error_view_retry');
+
   final AppError error;
   final VoidCallback onRetry;
 
@@ -33,7 +35,11 @@ class AppErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppButton(label: context.l10n.retry, onPressed: onRetry),
+            AppButton(
+              key: retryButtonKey,
+              label: context.l10n.retry,
+              onPressed: onRetry,
+            ),
           ],
         ),
       ),
