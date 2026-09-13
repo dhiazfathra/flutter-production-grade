@@ -27,3 +27,7 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+.tokensave
+.serena/
+.claude/
+.procoder/state/
