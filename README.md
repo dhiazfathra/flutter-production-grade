@@ -19,6 +19,13 @@ then the [decision records](docs/decisions/).
 | Routing | go_router with typed routes and an auth redirect | [ADR-0008](docs/decisions/0008-go-router-declarative-routing.md) |
 | Backend | DummyJSON (no account, no keys) | [ADR-0006](docs/decisions/0006-dummyjson-as-backend.md) |
 | Tests | flutter_test, mockito codegen, integration_test | [ADR-0010](docs/decisions/0010-testing-strategy.md) |
+| Credentials | `flutter_secure_storage` (Keychain / Keystore) | [ADR-0014](docs/decisions/0014-secure-token-storage.md) |
+| Crash reporting | Sentry behind an `ErrorReporter` interface | [ADR-0015](docs/decisions/0015-crash-and-error-reporting.md) |
+| Analytics | sealed event set, no-op by default | [ADR-0018](docs/decisions/0018-analytics-behind-an-interface.md) |
+| Design system | tokens plus shared widgets, verified by goldens | [ADR-0019](docs/decisions/0019-design-system-and-golden-tests.md) |
+| Push + deep links | everything resolves to a go_router route | [ADR-0020](docs/decisions/0020-push-notifications-and-deep-links.md) |
+| Accessibility | guideline matchers in the merge gate | [ADR-0025](docs/decisions/0025-accessibility-baseline.md) |
+| Automation | lefthook, Renovate, release-please, Codecov | [ADR-0028](docs/decisions/0028-repository-automation.md) |
 
 Targets iOS, Android, and web. Flutter 3.47.4, pinned with [fvm](https://fvm.app).
 
@@ -48,6 +55,10 @@ These are public sample credentials, not secrets.
 | `make cov` | Tests with coverage, enforcing the gate |
 | `make lint` | `format --set-exit-if-changed`, `analyze --fatal-infos`, `custom_lint` |
 | `make integration` | Integration tests via `flutter drive` |
+| `make goldens` | Regenerate golden files |
+| `make patrol` | Native-dialog tests on an Android device or emulator |
+| `make schema` | Dump the current drift schema into `drift_schemas/` |
+| `make doctor` | Check the pinned SDK, config files, and codegen freshness |
 
 ## Architecture
 
@@ -64,7 +75,12 @@ lib/
     auth/     data/ domain/ ui/
     products/ data/ domain/ ui/
     settings/ ui/
+    update/   ui/
 ```
+
+`core/` also carries `platform/` (connectivity, biometrics, push, deep links, URL strategy),
+`observability/` (error reporter, analytics), and `ui/design_system/`. Each platform capability is
+an interface with a fake for tests — nothing above `core/` touches a plugin directly.
 
 Dependency rule: `ui -> domain <- data`. Domain models are pure Dart — no Flutter, no dio, no
 drift. Features never import each other; anything shared moves to `core/`. Enforced by lint, and
@@ -83,16 +99,62 @@ CI runs `analyze --fatal-infos`, so a violation cannot merge.
 - **Debug-only inspectors.** `alice` and `pretty_dio_logger` are registered only when
   `kDebugMode`. They log and retain request bodies including tokens, so they must never ship in a
   release chain. See [ADR-0012](docs/decisions/0012-debug-only-network-inspectors.md).
-- **Coverage.** The gate is 100% of measured lines, with generated files and platform-conditional
-  files excluded explicitly in `tool/coverage.sh`. The exclusions are listed rather than hidden;
-  [ADR-0010](docs/decisions/0010-testing-strategy.md) explains what that leaves uncovered.
+- **Coverage.** The gate is 100% of measured lines, with generated files, platform-conditional
+  files, and thin plugin adapters excluded explicitly in `tool/coverage.sh`. The exclusions are
+  listed rather than hidden; [ADR-0010](docs/decisions/0010-testing-strategy.md) explains what that
+  leaves uncovered. Goldens, accessibility, and Patrol tests gate the merge but are not part of the
+  line measure.
+- **Tokens.** Access and refresh tokens live in the platform keystore, never in
+  `shared_preferences`. On web that is WebCrypto over `localStorage`, which defends against casual
+  inspection and not against XSS — a real web deployment should move to httpOnly cookies. See
+  [ADR-0014](docs/decisions/0014-secure-token-storage.md).
+- **Deep links and notifications.** Both are converted to a route path and handed to go_router, so
+  the auth redirect applies to them like any other navigation. A link that arrives while signed out
+  is held and replayed after login. Payload routes are matched against known routes, never pushed
+  verbatim — they are untrusted network input.
+  See [ADR-0020](docs/decisions/0020-push-notifications-and-deep-links.md).
+- **Offline.** Connectivity drives the banner and the "cached {time}" line, and nothing else.
+  Requests are never skipped because the device reports offline; a captive portal reports connected
+  and still fails. See [ADR-0016](docs/decisions/0016-connectivity-and-offline-ux.md).
+- **Startup.** Seven ordered steps before the first frame: URL strategy, config validation, error
+  reporter, settings, version gate, push, `runApp`. A missing config key fails immediately by name.
+- **Firebase is optional to run.** With no `google-services.json` / `GoogleService-Info.plist` /
+  web config present, push initialisation is skipped and the app runs normally. That branch is
+  tested, so a fresh clone always starts.
+- **Drift schema.** Versioned from v1 with a committed dump per version and a generated migration
+  test for every step. `make schema` after any schema change, or CI fails. See
+  [ADR-0021](docs/decisions/0021-drift-migrations-and-schema-tests.md).
+- **Web URLs.** The path URL strategy is on, so routes are real URLs. Any host must rewrite unknown
+  paths to `index.html` or deep links 404; `_redirects` and an nginx snippet are committed as
+  examples. See [ADR-0022](docs/decisions/0022-web-delivery.md).
 
 ## Configuration
 
-`config/*.json` holds per-flavor values (API base URL, app name, log level) and is git-ignored;
-`config/example.json` is committed. Values reach the app through `--dart-define-from-file` and a
-single `AppConfig` provider. They are compiled into the binary, so they are configuration, not
+`config/*.json` holds per-flavor values (API base URL, app name, log level, Sentry DSN, minimum
+supported version) and is git-ignored; `config/example.json` is committed. Values reach the app
+through `--dart-define-from-file` and a single `AppConfig` provider, which asserts at startup that
+every required key is present. They are compiled into the binary, so they are configuration, not
 secrets. See [ADR-0011](docs/decisions/0011-build-flavors-and-configuration.md).
+
+Firebase configuration (`google-services.json`, `GoogleService-Info.plist`, the web
+`firebaseConfig`) is per-flavor and git-ignored, with committed examples. The app runs without it —
+push is simply skipped.
+
+## What this scaffold costs you
+
+Batteries included means dependencies included. Each of these is behind an interface, so removing
+one is a deleted file and a changed provider override, not a refactor:
+
+| Dependency | What it buys | What it costs |
+|---|---|---|
+| Firebase (core, messaging) | push notifications | per-flavor config files, an APNs key, native build weight |
+| Sentry | crash and error reporting | a DSN per environment, and a `beforeSend` scrubber you must keep honest |
+| local_auth | biometric session lock | a platform permission, no web support |
+| Patrol | tests that can dismiss native dialogs | its own Android test harness and a separate CI job |
+| alchemist | golden coverage of the design system | binary files in the repo and review noise on design changes |
+
+[ADR-0029](docs/decisions/0029-deferred-additions.md) lists what was deliberately *not* added yet —
+remote feature flags, experiments, Fastlane lanes — and which seam each one will use.
 
 ## Contributing
 
