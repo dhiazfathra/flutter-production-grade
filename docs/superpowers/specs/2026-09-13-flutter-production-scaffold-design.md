@@ -36,25 +36,25 @@ taken as given.
 
 Dependency versions, verified on pub.dev on 2026-09-13:
 
-| Package | Version | Package | Version |
-|---|---|---|---|
-| flutter_riverpod | 3.4.3 | drift | 2.35.0 |
-| riverpod_annotation | 4.0.7 | drift_flutter | 0.3.1 |
-| riverpod_generator | 4.0.9 | drift_dev | 2.35.0 |
-| riverpod_lint | 3.1.9 | flutter_secure_storage | 11.1.1 |
-| dio | 5.11.1 | go_router | 18.0.1 |
-| retrofit | 4.10.0 | connectivity_plus | 7.3.1 |
-| retrofit_generator | 10.2.11 | alice | 1.2.0 |
-| freezed | 4.0.1 | pretty_dio_logger | 1.4.0 |
-| json_serializable | 6.14.1 | mockito | 5.8.1 |
-| build_runner | 2.16.1 | very_good_analysis | 11.0.0 |
-| custom_lint | 0.8.1 | shared_preferences | 2.5.5 |
-| sentry_flutter | 9.30.0 | package_info_plus | 10.2.1 |
-| firebase_core | 4.14.0 | firebase_messaging | 16.6.0 |
-| flutter_local_notifications | 22.3.1 | app_links | 7.2.1 |
-| local_auth | 3.0.2 | skeletonizer | 3.0.0 |
-| alchemist | 0.14.0 | patrol | 4.9.0 |
-| flutter_launcher_icons | 0.14.4 | flutter_native_splash | 2.4.8 |
+| Package                     | Version | Package                | Version |
+| --------------------------- | ------- | ---------------------- | ------- |
+| flutter_riverpod            | 3.4.3   | drift                  | 2.35.0  |
+| riverpod_annotation         | 4.0.7   | drift_flutter          | 0.3.1   |
+| riverpod_generator          | 4.0.9   | drift_dev              | 2.35.0  |
+| riverpod_lint               | 3.1.9   | flutter_secure_storage | 11.1.1  |
+| dio                         | 5.11.1  | go_router              | 18.0.1  |
+| retrofit                    | 4.10.0  | connectivity_plus      | 7.3.1   |
+| retrofit_generator          | 10.2.11 | alice                  | 1.2.0   |
+| freezed                     | 4.0.1   | pretty_dio_logger      | 1.4.0   |
+| json_serializable           | 6.14.1  | mockito                | 5.8.1   |
+| build_runner                | 2.16.1  | very_good_analysis     | 11.0.0  |
+| custom_lint                 | 0.8.1   | shared_preferences     | 2.5.5   |
+| sentry_flutter              | 9.30.0  | package_info_plus      | 10.2.1  |
+| firebase_core               | 4.14.0  | firebase_messaging     | 16.6.0  |
+| flutter_local_notifications | 22.3.1  | app_links              | 7.2.1   |
+| local_auth                  | 3.0.2   | skeletonizer           | 3.0.0   |
+| alchemist                   | 0.14.0  | patrol                 | 4.9.0   |
+| flutter_launcher_icons      | 0.14.4  | flutter_native_splash  | 2.4.8   |
 
 ## Architecture
 
@@ -167,10 +167,16 @@ resolves the initial theme, and runs the app inside a `ProviderScope` with flavo
 startup that every required key is present and non-empty — a missing base URL fails immediately
 with a named key rather than as a null dereference three screens in.
 
+`runZonedGuarded`'s own error callback is installed before `AppConfig` validation runs and is the
+bootstrap sink for failures that happen before `ErrorReporter` exists: it prints the named-key
+validation failure to stderr and reports it through the platform's crash log, since no
+`ErrorReporter` is selected yet at that point. Once step 3 selects the flavor's `ErrorReporter`,
+`FlutterError.onError` and `PlatformDispatcher.instance.onError` route through it instead.
+
 Startup order is fixed, and each step is skipped only by configuration, never silently:
 
 1. `WidgetsFlutterBinding.ensureInitialized()`, then the web URL strategy (ADR-0022).
-2. `AppConfig` validation.
+2. `AppConfig` validation, reported through the bootstrap sink above if it fails.
 3. `ErrorReporter` selection per flavor, with all three error handlers installed (ADR-0015).
 4. Settings read: resolved theme mode and locale (ADR-0009, ADR-0027).
 5. Version gate check; a failing gate routes to the update screen before anything else renders
@@ -192,11 +198,11 @@ explicitly tested (ADR-0005).
 ### Persistence
 
 Tokens go to `flutter_secure_storage` behind a `SecureTokenStorage` interface (ADR-0014): Keychain
-on iOS, EncryptedSharedPreferences over the Keystore on Android. On web it is WebCrypto over
-`localStorage`, which is weaker than either; acceptable for a scaffold, and the README and the code
-comment both say that a real deployment should prefer httpOnly cookies. Logout clears secure
-storage and the drift cache together, or the next user of the device sees the previous user's
-cached data.
+on iOS, EncryptedSharedPreferences over the Keystore on Android. Web is out of scope for this
+bearer-token design: `flutter_secure_storage`'s WebCrypto layer over `localStorage` is readable by
+any script in the page origin, so a production web deployment must move to an httpOnly, Secure,
+SameSite cookie-backed session instead. Logout clears secure storage and the drift cache together,
+or the next user of the device sees the previous user's cached data.
 
 Drift holds cached products with a `fetchedAt` column. `AppDatabase` is opened through a
 conditional import so native uses `drift_flutter` and web uses the wasm worker (ADR-0004). The
@@ -228,7 +234,10 @@ messages. No code above the data layer catches `DioException` or a drift excepti
 
 ### Theming
 
-`ColorScheme.fromSeed` for light and dark; tokens only in `core/ui/themes/`. Widgets use
+`ColorScheme.fromSeed` for light and dark; colour and typography tokens live only in
+`core/ui/themes/` (ADR-0009), which is the single canonical owner. `core/ui/design_system/`'s
+`AppTypography` is a non-token facade: it exposes the design system's named text styles by reading
+from the theme's `TextTheme`, it does not define its own tokens (ADR-0019). Widgets use
 `Theme.of(context)` and `Dimens` constants — no literal colours or magic padding. `ThemeViewModel`
 stores a resolved light or dark mode, seeded once from OS brightness on first launch (ADR-0009).
 The settings screen shows a two-state switch.
@@ -269,7 +278,9 @@ rather than racing it. Comparison is semantic — `1.10.0 > 1.9.0` is a unit tes
 Every external navigation — a notification tap, a universal link, a custom scheme, a web URL — is
 converted to a route path and handed to go_router, so the auth redirect applies uniformly
 (ADR-0020). `PendingDeepLink` holds the target when it arrives before the router exists or while the
-user is signed out; the redirect consumes and clears it after login. Payload `route` values are
+user is signed out; the redirect reads it after login but only clears it once navigation to that
+target has committed, since go_router can re-evaluate the redirect before that navigation finishes.
+Payload `route` values are
 untrusted network input: they are matched against known routes, never passed through, and unknown
 targets fall back to home and are reported. Firebase configuration files are per-flavor and
 git-ignored, with committed examples; when absent, push initialisation is skipped, and that path is
@@ -277,7 +288,8 @@ tested.
 
 ### Design system and states
 
-`core/ui/design_system/` holds `AppSpacing`, `AppTypography`, `AppRadius`, and the shared widgets
+`core/ui/design_system/` holds `AppSpacing`, `AppTypography` (a facade over the theme's typography
+tokens), `AppRadius`, and the shared widgets
 (`AppButton`, `AppTextField`, `AppScaffold`, `AppEmptyState`, `AppErrorView`, `AppLoading`).
 Features compose these; literal padding values and bare Material buttons are lint violations.
 Loading states use `skeletonizer`, which derives the skeleton from the real widget tree rather than
@@ -316,15 +328,15 @@ with a `combine` helper, returning localization keys rather than literal strings
 
 ## Testing
 
-| Level | Scope | Determinism |
-|---|---|---|
-| Unit | repositories against generated mock API services and in-memory drift; mappers; interceptors; the router redirect; validators; the version comparator; the deep-link URL-to-route mapper; `Result` and `AppError` | fully stubbed |
-| Widget | every screen in loading, data, empty, offline, and error states; the theme and locale switches; the login form; the update gate; the lock overlay | `ProviderScope` overrides |
-| Golden | every design-system widget and every screen, light and dark, plus `textScaleFactor: 2.0` | alchemist, bundled font |
-| Accessibility | tap targets, labels, and contrast per screen per theme | `meetsGuideline` matchers |
-| Migration | every drift schema step against its committed dump | `drift_dev schema generate` |
-| Integration | login, list, paginate, open detail, toggle theme, switch locale, deep link into detail, log out | stubbed dio, no live network |
-| Patrol (Android only) | notification permission prompt, biometric prompt, permission-denied branches | separate job, native dialogs |
+| Level                 | Scope                                                                                                                                                                                                            | Determinism                  |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Unit                  | repositories against generated mock API services and in-memory drift; mappers; interceptors; the router redirect; validators; the version comparator; the deep-link URL-to-route mapper; `Result` and `AppError` | fully stubbed                |
+| Widget                | every screen in loading, data, empty, offline, and error states; the theme and locale switches; the login form; the update gate; the lock overlay                                                                | `ProviderScope` overrides    |
+| Golden                | every design-system widget and every screen, light and dark, plus `textScaleFactor: 2.0`                                                                                                                         | alchemist, bundled font      |
+| Accessibility         | tap targets, labels, and contrast per screen per theme                                                                                                                                                           | `meetsGuideline` matchers    |
+| Migration             | every drift schema step against its committed dump                                                                                                                                                               | `drift_dev schema generate`  |
+| Integration           | login, list, paginate, open detail, toggle theme, switch locale, deep link into detail, log out                                                                                                                  | stubbed dio, no live network |
+| Patrol (Android only) | notification permission prompt, biometric prompt, permission-denied branches                                                                                                                                     | separate job, native dialogs |
 
 Mocks are generated with `@GenerateMocks`. Platform-backed services — secure storage,
 connectivity, biometrics, push, analytics, the error reporter — are substituted through their
@@ -337,10 +349,14 @@ Coverage gate: 100% of measured lines. `tool/coverage.sh` excludes, by explicit 
 `**/*.g.dart`, `**/*.freezed.dart`, generated l10n output, and
 `core/data/services/local/connection/web.dart`. The web connection file is exercised only by the
 Chrome integration job; if that job is skipped, that file is unverified. Thin plugin adapters
-(`SentryErrorReporter`, the `firebase_messaging` and `local_auth` wrappers) contain no branching
-logic and are excluded by the same explicit listing — their callers are fully covered through the
-interfaces. Coverage is uploaded to Codecov so the number is visible on the pull request rather
-than only as a job exit code (ADR-0028).
+(the `firebase_messaging` and `local_auth` wrappers) contain no branching logic and are excluded
+by the same explicit listing — their callers are fully covered through the interfaces.
+`SentryErrorReporter` is excluded from the coverage gate as glue, but its `beforeSend` scrubbing
+does branch — it strips the `Authorization` header and auth request bodies — so it is not exempt
+from testing: direct unit tests cover the `Authorization`-header removal, the auth-body removal,
+and a non-auth event passing through unscrubbed, to catch over-broad scrubbing. Coverage is
+uploaded to Codecov so the number is visible on the pull request rather than only as a job exit
+code (ADR-0028).
 
 Goldens and Patrol tests are part of the merge gate but are not part of the line-coverage measure.
 
@@ -354,7 +370,9 @@ GitHub Actions on push and pull request, SDK pinned via fvm with the pub cache r
 4. codegen freshness — run `build_runner`, fail if the working tree is dirty; the generated output
    is cached on `pubspec.lock` plus the annotated sources, because codegen otherwise dominates the
    run (ADR-0028)
-5. drift schema freshness — fail if `schemaVersion` changed without a dump in `drift_schemas/`
+5. drift schema freshness — generate a fresh schema dump and diff it against the committed dump on
+   every run, not only when `schemaVersion` changes; fail if they differ without a matching version
+   bump, and fail if `schemaVersion` changed without a dump in `drift_schemas/`
 6. web asset check — `sqlite3.wasm` and `drift_worker.js` present under `web/`
 7. `flutter test --coverage` (unit, widget, golden, accessibility, migration), then
    `tool/coverage.sh` enforces the gate and uploads to Codecov
@@ -363,8 +381,9 @@ GitHub Actions on push and pull request, SDK pinned via fvm with the pub cache r
 9. integration tests on Chrome via chromedriver
 10. Patrol tests on an Android emulator, in a separate job
 
-`lefthook` runs `dart format` and `flutter analyze` on staged Dart files before each commit; it must
-stay fast, because bypassing hooks is not permitted here. Renovate watches pub and GitHub Actions
+`lefthook` runs `dart format` and `flutter analyze` on staged Dart files before each commit as a
+fast local signal; it cannot block `git commit --no-verify`, so CI and branch protection are the
+actual enforcement. Renovate watches pub and GitHub Actions
 with grouped pull requests; `release-please` produces the changelog, version bump, and tag from the
 conventional commits (ADR-0028).
 
