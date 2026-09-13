@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "appTitle": "Flutter Production Grade",
+  "settings": "Settings",
+  "theme": "Theme",
+  "language": "Language",
+  "retry": "Retry",
+  "errorNetwork": "No connection. Check your network and try again.",
+  "errorUnauthorized": "Your session expired. Sign in again.",
+  "errorNotFound": "We couldn't find that.",
+  "errorServer": "The server had a problem. Try again shortly.",
+  "errorUnknown": "Something went wrong.",
+  "emptyTitle": "Nothing here yet",
+  "emptyBody": "When there is something to show, it will appear here."
+}
