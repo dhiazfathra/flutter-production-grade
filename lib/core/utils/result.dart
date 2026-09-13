@@ -1,6 +1,5 @@
+import 'package:flutter_production_grade/core/utils/app_error.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import 'app_error.dart';
 
 part 'result.freezed.dart';
 
