@@ -60,3 +60,11 @@ app.*.map.json
 # Environment configuration (secrets, per-flavor values)
 config/*.json
 !config/example.json
+
+# Generated code (build_runner, flutter gen-l10n)
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.config.dart
+*.mocks.dart
+lib/l10n/generated/
