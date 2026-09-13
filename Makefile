@@ -19,10 +19,10 @@ run-dev:
 	$(FLUTTER) run --flavor dev -t lib/main_dev.dart --dart-define-from-file=config/dev.json
 
 test:
-	$(FLUTTER) test
+	$(FLUTTER) test --dart-define-from-file=config/dev.json
 
 cov:
-	$(FLUTTER) test --coverage && ./tool/coverage.sh
+	$(FLUTTER) test --coverage --dart-define-from-file=config/dev.json && ./tool/coverage.sh
 
 goldens:
 	$(FLUTTER) test --update-goldens --tags golden

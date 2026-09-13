@@ -6,6 +6,9 @@ set -euo pipefail
 # (verified against pub.dev, latest is 1.15.1: only collect/format_coverage ship
 # as executables) so exclusion uses the `remove_from_coverage` package instead,
 # which does the same job against regex patterns on the lcov SF: paths.
+# NOTE: entries below are regex (matched against each SF: path with RegExp),
+# not glob — `remove_from_coverage` has no glob support, so `**/` etc. would
+# silently never match.
 EXCLUDE=(
 	'\.g\.dart$'
 	'\.freezed\.dart$'

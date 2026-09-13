@@ -3,6 +3,7 @@ import 'package:flutter_production_grade/app.dart';
 import 'package:flutter_production_grade/config/app_config.dart';
 import 'package:flutter_production_grade/config/flavor.dart';
 import 'package:flutter_production_grade/core/data/services/storage/settings_service.dart';
+import 'package:flutter_production_grade/features/settings/ui/views/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -68,5 +69,19 @@ void main() {
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
+  });
+
+  testWidgets('navigates from home to settings and back', (tester) async {
+    await tester.pumpWidget(
+      buildApp(themeMode: ThemeMode.light, locale: const Locale('en')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsNothing);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Settings'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
   });
 }

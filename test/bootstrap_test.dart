@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_production_grade/bootstrap.dart';
+import 'package:flutter_production_grade/config/flavor.dart';
 import 'package:flutter_production_grade/core/data/services/storage/settings_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeSettingsService implements SettingsService {
   ThemeMode? theme;
@@ -53,5 +55,18 @@ void main() {
 
     expect(locale, const Locale('en'));
     expect(settings.locale, const Locale('en'));
+  });
+
+  testWidgets('bootstrap wires config, settings, and runs the app', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    tester.platformDispatcher.localeTestValue = const Locale('en');
+
+    await bootstrap(Flavor.dev);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
