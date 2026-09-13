@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  FLUTTER_VERSION_FILE: .fvmrc
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kuhnroyal/flutter-fvm-config-action@v3
+        id: fvm-config
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config.outputs.FLUTTER_CHANNEL }}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            **/*.g.dart
+            **/*.freezed.dart
+          key: build-runner-${{ hashFiles('pubspec.lock', 'lib/**/*.dart') }}
+      - run: make get
+      - run: make gen
+      - run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kuhnroyal/flutter-fvm-config-action@v3
+        id: fvm-config
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config.outputs.FLUTTER_CHANNEL }}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            **/*.g.dart
+            **/*.freezed.dart
+          key: build-runner-${{ hashFiles('pubspec.lock', 'lib/**/*.dart') }}
+      - run: make get
+      - run: make gen
+      - run: make cov
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kuhnroyal/flutter-fvm-config-action@v3
+        id: fvm-config
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config.outputs.FLUTTER_CHANNEL }}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            **/*.g.dart
+            **/*.freezed.dart
+          key: build-runner-${{ hashFiles('pubspec.lock', 'lib/**/*.dart') }}
+      - run: make get
+      - run: make gen
+      - run: fvm flutter build web --flavor dev -t lib/main_dev.dart --dart-define-from-file=config/dev.json
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: kuhnroyal/flutter-fvm-config-action@v3
+        id: fvm-config
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config.outputs.FLUTTER_CHANNEL }}
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ hashFiles('pubspec.lock') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            **/*.g.dart
+            **/*.freezed.dart
+          key: build-runner-${{ hashFiles('pubspec.lock', 'lib/**/*.dart') }}
+      - run: make get
+      - run: make gen
+      - run: make integration

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["build_runner", "/_generator$/", "/_annotation$/"],
+      "groupName": "build_runner and codegen packages",
+      "description": "build_runner, *_generator, and *_annotation packages must move together or the intermediate state does not compile."
+    }
+  ]
+}
