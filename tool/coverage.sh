@@ -30,6 +30,10 @@ hit=${total% *}
 found=${total#* }
 
 echo "covered ${hit}/${found}"
+if [ "$found" -eq 0 ]; then
+	echo "FAIL: no lines measured — check exclusions or the test run"
+	exit 1
+fi
 if [ "$hit" -ne "$found" ]; then
 	echo "FAIL: coverage is not 100% of measured lines"
 	$DART run coverage:format_coverage --lcov --in coverage/lcov.cleaned.info \

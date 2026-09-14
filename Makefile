@@ -28,7 +28,7 @@ goldens:
 	$(FLUTTER) test --update-goldens --tags golden
 
 lint:
-	$(DART) format --set-exit-if-changed lib test
+	$(DART) format --set-exit-if-changed lib test integration_test test_driver
 	$(FLUTTER) analyze --fatal-infos
 
 integration:

@@ -27,7 +27,7 @@ void main() {
     test('writeThemeMode rejects ThemeMode.system', () {
       expect(
         () => service.writeThemeMode(ThemeMode.system),
-        throwsAssertionError,
+        throwsArgumentError,
       );
     });
 

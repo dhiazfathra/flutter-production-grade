@@ -109,5 +109,15 @@ jobs:
       - run: make get
       - run: make gen
         if: steps.build-runner-cache.outputs.cache-hit != 'true'
-      - run: chromedriver --port=4444 &
-      - run: sleep 5 && make integration
+      - name: Run integration tests
+        run: |
+          chromedriver --port=4444 &
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:4444/status >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:4444/status >/dev/null || {
+            echo "FAIL: chromedriver did not become ready on port 4444"
+            exit 1
+          }
+          make integration

@@ -27,10 +27,13 @@ class SharedPreferencesSettingsService implements SettingsService {
 
   @override
   Future<void> writeThemeMode(ThemeMode mode) async {
-    assert(
-      mode != ThemeMode.system,
-      'Only a resolved mode may be stored (ADR-0009)',
-    );
+    if (mode == ThemeMode.system) {
+      throw ArgumentError.value(
+        mode,
+        'mode',
+        'Only a resolved mode may be stored (ADR-0009)',
+      );
+    }
     await _prefs.setString(
       _themeKey,
       mode == ThemeMode.dark ? 'dark' : 'light',
