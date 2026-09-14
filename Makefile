@@ -33,8 +33,8 @@ lint:
 
 integration:
 	$(FLUTTER) drive --driver=test_driver/integration_test.dart \
-		--target=integration_test/app_test.dart -d chrome \
-		--dart-define-from-file=config/example.json
+		--target=integration_test/app_test.dart \
+		-d web-server --browser-name=chrome --dart-define-from-file=config/example.json
 
 doctor:
 	./tool/doctor.sh
