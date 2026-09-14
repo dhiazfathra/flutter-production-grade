@@ -82,7 +82,7 @@ jobs:
       - run: make get
       - run: make gen
         if: steps.build-runner-cache.outputs.cache-hit != 'true'
-      - run: fvm flutter build web --flavor dev -t lib/main_dev.dart --dart-define-from-file=config/dev.json
+      - run: flutter build web -t lib/main_dev.dart --dart-define-from-file=config/example.json
 
   integration:
     runs-on: ubuntu-latest

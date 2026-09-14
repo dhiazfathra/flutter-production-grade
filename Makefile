@@ -1,5 +1,5 @@
-FLUTTER := fvm flutter
-DART := fvm dart
+FLUTTER := $(shell command -v fvm >/dev/null 2>&1 && echo "fvm flutter" || echo flutter)
+DART := $(shell command -v fvm >/dev/null 2>&1 && echo "fvm dart" || echo dart)
 
 .PHONY: get gen watch l10n run-dev test cov lint goldens integration schema doctor
 
@@ -19,10 +19,10 @@ run-dev:
 	$(FLUTTER) run --flavor dev -t lib/main_dev.dart --dart-define-from-file=config/dev.json
 
 test:
-	$(FLUTTER) test --dart-define-from-file=config/dev.json
+	$(FLUTTER) test --dart-define-from-file=config/example.json
 
 cov:
-	$(FLUTTER) test --coverage --dart-define-from-file=config/dev.json && ./tool/coverage.sh
+	$(FLUTTER) test --coverage --dart-define-from-file=config/example.json && ./tool/coverage.sh
 
 goldens:
 	$(FLUTTER) test --update-goldens --tags golden
