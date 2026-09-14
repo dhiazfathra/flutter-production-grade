@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DART="dart"
+command -v fvm >/dev/null 2>&1 && DART="fvm dart"
+
 # Exclusions are listed explicitly, never globbed away silently (ADR-0010).
 # `coverage:remove_from_lcov` does not exist in any published `coverage` release
 # (verified against pub.dev, latest is 1.15.1: only collect/format_coverage ship
@@ -18,7 +21,7 @@ EXCLUDE=(
 )
 
 cp coverage/lcov.info coverage/lcov.cleaned.info
-fvm dart run remove_from_coverage:remove_from_coverage \
+$DART run remove_from_coverage:remove_from_coverage \
 	-f coverage/lcov.cleaned.info \
 	"${EXCLUDE[@]/#/--remove=}"
 
@@ -29,7 +32,7 @@ found=${total#* }
 echo "covered ${hit}/${found}"
 if [ "$hit" -ne "$found" ]; then
 	echo "FAIL: coverage is not 100% of measured lines"
-	fvm dart run coverage:format_coverage --lcov --in coverage/lcov.cleaned.info \
+	$DART run coverage:format_coverage --lcov --in coverage/lcov.cleaned.info \
 		--report-on lib 2>/dev/null || true
 	exit 1
 fi
