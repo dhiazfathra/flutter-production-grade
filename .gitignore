@@ -55,7 +55,7 @@ app.*.map.json
 .tokensave
 .serena/
 .claude/
-.procoder/state/
+.procoder/
 
 # Environment configuration (secrets, per-flavor values)
 config/*.json
