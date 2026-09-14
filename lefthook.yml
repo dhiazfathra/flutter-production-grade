@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.dart"
+      run: fvm dart format --set-exit-if-changed {staged_files}
+    analyze:
+      glob: "*.dart"
+      run: fvm flutter analyze --fatal-infos

@@ -1,0 +1,6 @@
+{
+  "BASE_URL": "https://dummyjson.com",
+  "APP_NAME": "FPG dev",
+  "SENTRY_DSN": "",
+  "MIN_SUPPORTED_VERSION": "1.0.0"
+}

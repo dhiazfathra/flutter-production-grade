@@ -1,0 +1,15 @@
+{
+  "@@locale": "id",
+  "appTitle": "Flutter Production Grade",
+  "settings": "Pengaturan",
+  "theme": "Tema",
+  "language": "Bahasa",
+  "retry": "Coba lagi",
+  "errorNetwork": "Tidak ada koneksi. Periksa jaringan Anda dan coba lagi.",
+  "errorUnauthorized": "Sesi Anda telah berakhir. Silakan masuk kembali.",
+  "errorNotFound": "Kami tidak dapat menemukannya.",
+  "errorServer": "Server mengalami masalah. Coba lagi sebentar lagi.",
+  "errorUnknown": "Terjadi kesalahan.",
+  "emptyTitle": "Belum ada apa-apa",
+  "emptyBody": "Ketika ada sesuatu untuk ditampilkan, itu akan muncul di sini."
+}

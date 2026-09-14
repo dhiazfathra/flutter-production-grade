@@ -1,0 +1,45 @@
+name: flutter_production_grade
+description: Production-grade Flutter scaffold.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_web_plugins:
+    sdk: flutter
+  freezed_annotation: ^3.1.0
+  go_router: ^18.0.1
+  intl: any
+  json_annotation: ^4.9.0
+  riverpod_annotation: ^4.0.7
+  shared_preferences: ^2.5.5
+  skeletonizer: ^3.0.0
+
+dev_dependencies:
+  alchemist: ^0.14.0
+  build_runner: ^2.16.1
+  build_verify: ^3.1.0
+  coverage: ^1.15.1
+  flutter_test:
+    sdk: flutter
+  freezed: ^4.0.1
+  go_router_builder: ^4.0.0
+  integration_test:
+    sdk: flutter
+  json_serializable: ^6.14.1
+  mockito: ^5.8.1
+  remove_from_coverage: ^2.0.0
+  riverpod_generator: ^4.0.9
+  riverpod_lint: ^3.1.9
+  very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
