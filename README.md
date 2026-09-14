@@ -27,7 +27,7 @@ gitignored because it carries secrets and per-environment values.
 | --- | --- |
 | `BASE_URL` | API base URL |
 | `APP_NAME` | Display name for the flavor |
-| `SENTRY_DSN` | Crash reporting DSN (empty disables it) |
+| `SENTRY_DSN` | Crash reporting DSN; required for the prod flavor, optional (may be empty) elsewhere |
 | `MIN_SUPPORTED_VERSION` | Minimum version for the force-update check |
 
 Three flavors, each with its own entrypoint:
