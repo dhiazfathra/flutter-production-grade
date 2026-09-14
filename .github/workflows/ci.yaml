@@ -86,6 +86,7 @@ jobs:
 
   integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: kuhnroyal/flutter-fvm-config-action@v3
@@ -108,4 +109,5 @@ jobs:
       - run: make get
       - run: make gen
         if: steps.build-runner-cache.outputs.cache-hit != 'true'
-      - run: make integration
+      - run: chromedriver --port=4444 &
+      - run: sleep 5 && make integration
