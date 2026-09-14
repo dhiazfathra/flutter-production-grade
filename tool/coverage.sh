@@ -12,11 +12,12 @@ command -v fvm >/dev/null 2>&1 && DART="fvm dart"
 # NOTE: entries below are regex (matched against each SF: path with RegExp),
 # not glob — `remove_from_coverage` has no glob support, so `**/` etc. would
 # silently never match.
+# Only files that exist today are listed; add the drift web connection file here
+# when scaffold-03 lands it (docs/superpowers/plans/2026-09-13-scaffold-03-products-offline.md).
 EXCLUDE=(
 	'\.g\.dart$'
 	'\.freezed\.dart$'
 	'^lib/l10n/generated/'
-	'^lib/core/data/services/local/connection/web\.dart$'
 	'^lib/core/platform/url_strategy_web\.dart$'
 )
 
